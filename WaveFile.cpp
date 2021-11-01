@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define L_CHANNEL_FREQ 220
+#define R_CHANNEL_FREQ (L_CHANNEL_FREQ * (double(3) / 2))
+
 struct SMinimalWaveFileHeader
 {
     //the main chunk
@@ -38,7 +41,7 @@ bool WriteWaveFile(const char *szFileName, void *pData, long nDataSize, unsigned
 
     //fill out the main chunk
     memcpy(waveHeader.m_szChunkID, "RIFF", 4);
-    waveHeader.m_nChunkSize = nDataSize + 36;
+    waveHeader.m_nChunkSize = nDataSize + sizeof(SMinimalWaveFileHeader) - 8;
     memcpy(waveHeader.m_szFormat, "WAVE", 4);
 
     //fill out sub chunk 1 "fmt "
@@ -70,10 +73,25 @@ int main()
 {
     long sampleRate = 44100;
     long numSeconds = 4;
-    long nChannels = 1;
-    long numSamples = sampleRate * numSeconds * nChannels;
-    long *pData = new long[numSamples];
-    WriteWaveFile("sound.wav", pData, numSamples * sizeof(pData[0]), nChannels, sampleRate, sizeof(pData[0]) * 8);
+    long numChannels = 2;
+    long numSamples = sampleRate * numSeconds * numChannels;
+    short *pData = new short[numSamples];
+
+    int i;
+    double amp = 0.5;
+    int samplesPerCycleLeft = sampleRate / L_CHANNEL_FREQ;
+    int samplesPerCycleRight = sampleRate / R_CHANNEL_FREQ;
+    for (i = 0; i < numSamples; i += 2)
+    {
+        short rawValLeft = (((i % samplesPerCycleLeft) / (double(samplesPerCycleLeft))) * __SHRT_MAX__);
+        short rawValRight = (((i % samplesPerCycleRight) / (double(samplesPerCycleRight))) * __SHRT_MAX__);
+        pData[i] = rawValLeft * amp;
+        pData[i + 1] = rawValRight * amp;
+    }
+
+    WriteWaveFile("sound.wav", pData, numSamples * sizeof(pData[0]), numChannels, sampleRate, sizeof(pData[0]) * 8);
+
+    delete[] pData;
 
     return true;
 }
