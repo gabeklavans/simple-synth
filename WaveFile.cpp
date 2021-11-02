@@ -29,7 +29,8 @@ struct SMinimalWaveFileHeader
     //then comes the data!
 };
 
-bool WriteWaveFile(const char *szFileName, void *pData, long nDataSize, unsigned short nNumChannels, unsigned long nSampleRate, unsigned long nBitsPerSample)
+template <class T>
+bool WriteWaveFile(const char *szFileName, T *pData, long numSamples, unsigned short nNumChannels, unsigned long nSampleRate, unsigned long nBitsPerSample)
 {
     //open the file if we can
     FILE *File = fopen(szFileName, "w+b");
@@ -42,7 +43,8 @@ bool WriteWaveFile(const char *szFileName, void *pData, long nDataSize, unsigned
 
     //fill out the main chunk
     memcpy(waveHeader.m_szChunkID, "RIFF", 4);
-    waveHeader.m_nChunkSize = nDataSize + sizeof(SMinimalWaveFileHeader) - 8;
+    long dataSize = sizeof(pData[0]) * numSamples;
+    waveHeader.m_nChunkSize = dataSize + sizeof(SMinimalWaveFileHeader) - 8;
     memcpy(waveHeader.m_szFormat, "WAVE", 4);
 
     //fill out sub chunk 1 "fmt "
@@ -57,7 +59,7 @@ bool WriteWaveFile(const char *szFileName, void *pData, long nDataSize, unsigned
 
     //fill out sub chunk 2 "data"
     memcpy(waveHeader.m_szSubChunk2ID, "data", 4);
-    waveHeader.m_nSubChunk2Size = nDataSize;
+    waveHeader.m_nSubChunk2Size = dataSize;
 
     //write the header
     fwrite(&waveHeader, sizeof(SMinimalWaveFileHeader), 1, File);
@@ -88,7 +90,7 @@ int main()
         pData[i + 1] = rawValRight * amp;
     }
 
-    WriteWaveFile("sound.wav", pData, numSamples * sizeof(pData[0]), numChannels, sampleRate, sizeof(pData[0]) * 8);
+    WriteWaveFile("sound.wav", pData, numSamples, numChannels, sampleRate, sizeof(pData[0]) * 8);
 
     delete[] pData;
 
