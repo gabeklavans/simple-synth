@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
-#define L_CHANNEL_FREQ 220
+#define L_CHANNEL_FREQ 440.0
 #define R_CHANNEL_FREQ (L_CHANNEL_FREQ * (double(3) / 2))
 
 struct SMinimalWaveFileHeader
@@ -79,12 +80,10 @@ int main()
 
     int i;
     double amp = 0.5;
-    int samplesPerCycleLeft = sampleRate / L_CHANNEL_FREQ;
-    int samplesPerCycleRight = sampleRate / R_CHANNEL_FREQ;
     for (i = 0; i < numSamples; i += 2)
     {
-        short rawValLeft = (((i % samplesPerCycleLeft) / (double(samplesPerCycleLeft))) * __SHRT_MAX__);
-        short rawValRight = (((i % samplesPerCycleRight) / (double(samplesPerCycleRight))) * __SHRT_MAX__);
+        short rawValLeft = sin(L_CHANNEL_FREQ * 2 * M_PI * i / sampleRate) * SHRT_MAX;
+        short rawValRight = sin(R_CHANNEL_FREQ * 2 * M_PI * i / sampleRate) * SHRT_MAX;
         pData[i] = rawValLeft * amp;
         pData[i + 1] = rawValRight * amp;
     }
